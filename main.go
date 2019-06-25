@@ -1,7 +1,7 @@
 package main
 
 import (
-   "database/sql"
+//   "database/sql"
    models "github.com/jelgar/login/models"
    "log"
    "fmt"
@@ -9,7 +9,7 @@ import (
 
 // Put this is models later
 type Env struct {
-    db *sql.DB
+    db models.Datastore
 }
 
 func main() {
