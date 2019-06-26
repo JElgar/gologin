@@ -1,8 +1,10 @@
 package models
 
+import(
+    "errors"
+)
+
 type UserStore interface {
-    GetUser() (User, error)
-    CreateUser(User) (User, error)
 }
 
 type User struct {
@@ -11,12 +13,23 @@ type User struct {
     Password    string
 }
 
-func (db *DB) GetUser() (User, error){
+func (tx *Tx) GetUser(u *User) (*User, error){
     // Do a transaction thing to get the user from the database... Need a good way of doing transactions
-    return User{}, nil
+    if u == nil {
+        return nil, errors.New("user required")
+    } else if u.Username == "" {
+        return nil, errors.New("Username required")
+    }
+
+
+    _, err := tx.Exec(`INSERT INTO user(username, password) VALUES(?,?)`)
+    if err != nil {
+
+    }
+    return nil, nil
 }
 
-func (db *DB) CreateUser(User) (User, error) {
+func (tx *Tx) CreateUser(u *User) (error) {
     // Add user to database --> again need transation thing
-    return User{}, nil
+    return nil
 }

@@ -5,6 +5,7 @@ import (
    models "github.com/jelgar/login/models"
    "log"
    "fmt"
+   "github.com/gin-gonic/gin"
 )
 
 // Put this is models later
@@ -22,4 +23,18 @@ func main() {
     fmt.Println(env)
 
     //Gin stuff
+    r := gin.Default()
+    r.GET("/ping", ping)
+    r.GET("/user", env.getUser)
+}
+
+func ping(c *gin.Context){
+    c.JSON(200, gin.H{
+        "world": "Hello",
+    })
+}
+
+func (e *Env) getUser (c *gin.Context) {
+    tx, _ := e.db.Begin()
+    tx.GetUser(nil)
 }

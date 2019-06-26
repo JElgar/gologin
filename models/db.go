@@ -8,6 +8,7 @@ import (
 // This interface will contain all the interfaces of the required operations of the Datastore. For example a user Datastore interface will be created and used to define all methods for user based operations.
 type Datastore interface {
     UserStore
+    Begin() (*Tx, error)
 }
 
 // This is a DB sturct that will inherit the interface above and thus MUST implement all the required methods // Is this a good way of doing this??
