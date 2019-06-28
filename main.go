@@ -26,6 +26,7 @@ func main() {
     r := gin.Default()
     r.GET("/ping", ping)
     r.GET("/user", env.getUser)
+    r.Run(":8080")
 }
 
 func ping(c *gin.Context){
@@ -35,6 +36,18 @@ func ping(c *gin.Context){
 }
 
 func (e *Env) getUser (c *gin.Context) {
-    tx, _ := e.db.Begin()
-    tx.GetUser(nil)
+
+    // This is not how transactions work. Transactions should only return stuff when commited rihgt?
+    var u models.User
+    c.BindJSON(&u)
+    //user, err := e.db.GetUser(&models.User{Username: "john", Password:"123"})
+    user, err := e.db.GetUser(&u)
+    if err != nil {
+        if (err.Code == 404){
+            fmt.Println("User doesn't exist")
+        }else {
+            panic(err)
+        }
+    }
+    fmt.Println(user)
 }

@@ -1,10 +1,11 @@
 package models
 
 import(
-    "errors"
+    "database/sql"
 )
 
 type UserStore interface {
+    GetUser(u *User) (User, *ApiError)
 }
 
 type User struct {
@@ -13,23 +14,30 @@ type User struct {
     Password    string
 }
 
-func (tx *Tx) GetUser(u *User) (*User, error){
+func (db *DB) GetUser(iu *User) (User, *ApiError){
     // Do a transaction thing to get the user from the database... Need a good way of doing transactions
-    if u == nil {
-        return nil, errors.New("user required")
-    } else if u.Username == "" {
-        return nil, errors.New("Username required")
+    var u User
+    sqlStmt := `SELECT username, password FROM users WHERE username = $1;`
+
+    if iu == nil {
+        return u, &ApiError{nil, "Cannot get NIL user", 400}
+    } else if iu.Username == "" {
+        return u, &ApiError{nil, "Username Required", 400}
     }
 
 
-    _, err := tx.Exec(`INSERT INTO user(username, password) VALUES(?,?)`)
-    if err != nil {
-
+    res := db.QueryRow(sqlStmt, iu.Username)
+    switch err := res.Scan(&u.Username, &u.Password); err {
+        case sql.ErrNoRows:
+            return u, &ApiError{err, "User does not exist in database", 404}
+        case nil:
+            return u, nil
+        default:
+            return u, &ApiError{err, "Unknown Error during Query", 400}
     }
-    return nil, nil
 }
 
-func (tx *Tx) CreateUser(u *User) (error) {
+func (db *DB) CreateUser(u *User) (error) {
     // Add user to database --> again need transation thing
     return nil
 }
