@@ -1,7 +1,7 @@
 package models
 
 type ApiError struct {
-   E error
+   Err error
    Message string
    Code int
 }

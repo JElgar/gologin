@@ -2,12 +2,10 @@ package models
 
 import(
     "database/sql"
-    "fmt"
 )
 
 type UserStore interface {
     GetUser(u *User) (User, *ApiError)
-    CreateUser(u *User) (FullUser, *ApiError)
 }
 
 // What types of users do I need?
@@ -45,32 +43,7 @@ func (db *DB) GetUser(iu *User) (User, *ApiError){
     }
 }
 
-func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
-    fmt.Println("Entered Create user")
-    // TODO Should probablby write function that takes statement and struct and bind
-    var fu FullUser
-    sqlStmt := `INSERT INTO users (username, password) VALUES($1,$2);`
-    fmt.Println("Printing Username")
-    fmt.Println(u.Username)
-    fmt.Println("Printed Username")
-
-    // TODO Verify User is Valid
-    maybeUser, err := db.GetUser(u)
-    // If the user already exists
-    if err == nil {
-        // Error code 409 - conflict
-       return fu, &ApiError{nil, "The user already exists in the database", 409}
-    } else if err.Code != 404 {
-        // If there is an error but it is not because the user does not exist
-        return fu, &ApiError{err, "Error chechking if user exists", 500}
-    }
-    res, insertErr := db.Exec(sqlStmt, u.Username, u.Password)
-    switch insertErr{
-        case nil:
-            fmt.Println("User inserted")
-            fmt.Println(res)
-            return fu, nil
-        default:
-            return fu, &ApiError{err, "Unknown Error during Insertion of User", 400}
-    }
+func (db *DB) CreateUser(u *User) (error) {
+    sqlStmt := `INSERT username, password INTO users WHERE username = $1;`
+    return nil
 }

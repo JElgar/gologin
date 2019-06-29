@@ -26,6 +26,7 @@ func main() {
     r := gin.Default()
     r.GET("/ping", ping)
     r.GET("/user", env.getUser)
+    r.GET("/createUser", env.createUser)
     r.Run(":8080")
 }
 
@@ -48,6 +49,21 @@ func (e *Env) getUser (c *gin.Context) {
         }else {
             panic(err)
         }
+    }
+    fmt.Println(user)
+}
+
+func (e *Env) createUser (c *gin.Context){
+    var u models.User
+    c.BindJSON(&u)
+
+    user, err := e.db.CreateUser(&u)
+    if err != nil && err.Code == 409 {
+        // TODO DETal with case of collision --> this error code is currently coming out wrong (is 500 should be 409 plz fix 
+    }
+    else if err != nil {
+        fmt.Println(err.Message)
+        panic(err)
     }
     fmt.Println(user)
 }
