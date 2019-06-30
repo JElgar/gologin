@@ -6,8 +6,9 @@ import(
 )
 
 type UserStore interface {
-    GetUser(u *User) (User, *ApiError)
+    GetUser(u *User) (FullUser, *ApiError)
     CreateUser(u *User) (FullUser, *ApiError)
+    Login(u *User) (FullUser, *ApiError)
 }
 
 // What types of users do I need?
@@ -22,9 +23,9 @@ type FullUser struct {
     Password    string  `json:"password"`
 }
 
-func (db *DB) GetUser(iu *User) (User, *ApiError){
+func (db *DB) GetUser(iu *User) (FullUser, *ApiError){
     // Do a transaction thing to get the user from the database... Need a good way of doing transactions
-    var u User
+    var u FullUser
     sqlStmt := `SELECT username, password FROM users WHERE username = $1;`
 
     if iu == nil {
@@ -75,4 +76,22 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
         default:
             return fu, &ApiError{err, "Unknown Error during Insertion of User", 400}
     }
+}
+
+func (db *DB) Login (u *User) (FullUser, *ApiError) {
+    dbUser, err := db.GetUser(u)
+    if err != nil {
+        // DO THE CHECKS
+    }
+    isSame, err := ComparePassword(dbUser.Password, []byte(u.Password))
+    if err != nil {
+        // DO the thing
+    }
+    if (!isSame) {
+        fmt.Println("Incorrect Pssword")
+        return dbUser, &ApiError{nil, "Password does not match", 401}
+    }
+
+    fmt.Print("Encrypted Passwords Match")
+    return dbUser, nil
 }
