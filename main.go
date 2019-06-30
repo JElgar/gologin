@@ -54,14 +54,15 @@ func (e *Env) getUser (c *gin.Context) {
 }
 
 func (e *Env) createUser (c *gin.Context){
+    // TODO on success return user and enventually JSON web token
     var u models.User
     c.BindJSON(&u)
 
     user, err := e.db.CreateUser(&u)
     if err != nil && err.Code == 409 {
-        // TODO DETal with case of collision --> this error code is currently coming out wrong (is 500 should be 409 plz fix 
-    }
-    else if err != nil {
+        fmt.Print("User already exists")
+        // TODO Deal with case of collision --> this error code is currently coming out wrong (is 500 should be 409 plz fix 
+    } else if err != nil {
         fmt.Println(err.Message)
         panic(err)
     }

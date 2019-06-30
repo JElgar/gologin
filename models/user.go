@@ -50,12 +50,9 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
     // TODO Should probablby write function that takes statement and struct and bind
     var fu FullUser
     sqlStmt := `INSERT INTO users (username, password) VALUES($1,$2);`
-    fmt.Println("Printing Username")
-    fmt.Println(u.Username)
-    fmt.Println("Printed Username")
 
     // TODO Verify User is Valid
-    maybeUser, err := db.GetUser(u)
+    _ , err := db.GetUser(u)
     // If the user already exists
     if err == nil {
         // Error code 409 - conflict
@@ -64,7 +61,12 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
         // If there is an error but it is not because the user does not exist
         return fu, &ApiError{err, "Error chechking if user exists", 500}
     }
-    res, insertErr := db.Exec(sqlStmt, u.Username, u.Password)
+
+    encPassword, err := HashSaltPwd([]byte(u.Password))
+    if err != nil {
+        return fu, &ApiError{err, "Failed to salt and hash password", 500}
+    }
+    res, insertErr := db.Exec(sqlStmt, u.Username, encPassword)
     switch insertErr{
         case nil:
             fmt.Println("User inserted")
