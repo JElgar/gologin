@@ -3,6 +3,7 @@ package models
 import (
     "database/sql"
     _ "github.com/lib/pq"
+    "fmt"
 )
 
 // This interface will contain all the interfaces of the required operations of the Datastore. For example a user Datastore interface will be created and used to define all methods for user based operations.
@@ -46,13 +47,30 @@ func (db *DB) Begin() (*Tx, error) {
 // Given a table, column and some data, checks if that data already exists in the column
 func (db *DB) IsUnique(data interface{}, table string, column string) (bool, error){
     var count int
-    sqlStmt := `SELECT COUNT($1) FROM $2 WHERE username = $3;`
-    row := db.QueryRow(sqlStmt, column, table, data)
+    var sqlStmt string
+    var row *sql.Row
+    sqlStmt = "SELECT COUNT(*) FROM " + table + " WHERE " + column + " = $1;"
+
+    switch data.(type) {
+        case string:
+            fmt.Println("got a string")
+            var d string
+            d = data.(string)
+            fmt.Println(d)
+            row = db.QueryRow(sqlStmt, d)
+            fmt.Println("got a row")
+        case int:
+            var d int
+            d = data.(int)
+            row = db.QueryRow(sqlStmt, d)
+    }
+
     if err := row.Scan(&count); err != nil {
         return false, err
     }
     if count != 0 {
         return false, nil
     }
+    fmt.Println("The token is unique happy days")
     return true, nil
 }

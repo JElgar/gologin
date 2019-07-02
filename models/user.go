@@ -4,6 +4,7 @@ import(
     "database/sql"
     "fmt"
     "crypto/rand"
+    "encoding/base64"
 )
 
 type UserStore interface {
@@ -16,6 +17,7 @@ type UserStore interface {
 type User struct {
     Username    string  `json:"username"`
     Password    string  `json:"password"`
+    Email       string  `json:"email"`
 }
 
 type FullUser struct {
@@ -51,7 +53,7 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
     fmt.Println("Entered Create user")
     // TODO Should probablby write function that takes statement and struct and bind
     var fu FullUser
-    sqlStmt := `INSERT INTO users (username, password, emailverif, token) VALUES($1,$2, 0, $3);`
+    sqlStmt := `INSERT INTO users (username, email, password, emailverif, token) VALUES($1,$2, $3, '0', $4);`
 
     // TODO Verify User is Valid
     _ , err := db.GetUser(u)
@@ -73,18 +75,29 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
     // Get a token for email verification
     token, erro := db.getUniqueToken()
     if erro != nil {
+        fmt.Println("There was an error gettign the unique token")
         panic(erro)
     }
 
-    res, insertErr := db.Exec(sqlStmt, u.Username, encPassword, token)
+    fmt.Println("Got the unique token")
+    // TODO make sure only insert a max number of token items (so it doesnt go above 50)
+
+    res, insertErr := db.Exec(sqlStmt, u.Username, u.Email, encPassword, token)
     switch insertErr{
         case nil:
             fmt.Println("User inserted")
             fmt.Println(res)
             return fu, nil
         default:
+            panic(insertErr)
             return fu, &ApiError{err, "Unknown Error during Insertion of User", 400}
     }
+
+    db.SendVerfEmail(fu)
+}
+
+func (db *DB) SendVerfEmail(u *User) {
+    
 }
 
 func (db *DB) Login (u *User) (FullUser, *ApiError) {
@@ -106,25 +119,26 @@ func (db *DB) Login (u *User) (FullUser, *ApiError) {
 }
 
 // Generate a random token to assign to a user for password reset or email verification. Generates random token and assures it is unique in database
-func (db *DB) getUniqueToken() ([]byte, error){
+func (db *DB) getUniqueToken() (string, error){
     unique := false
-    var key []byte
+    var key string
     var err error
 
     for !unique {
-        key, err = getToken()
+        key, err = getToken(20)
         if err != nil {
-            return nil, err
+            return "", err
         }
         unique, err = db.tokenIsUnique(key)
         if err != nil {
-            return nil, err
+            return "", err
         }
     }
     return key, nil
 }
 
-func (db *DB) tokenIsUnique (token []byte) (bool, error) {
+func (db *DB) tokenIsUnique (token string) (bool, error) {
+    fmt.Println("Checking if token is unique")
     unique, err := db.IsUnique(token, "users", "token")
     if err != nil{
         return false, err
@@ -135,11 +149,12 @@ func (db *DB) tokenIsUnique (token []byte) (bool, error) {
     return true, nil
 }
 
-func getToken() ([]byte, error) {
-    token := make([]byte, 20)
+func getToken(length int) (string, error) {
+    token := make([]byte, length)
     _, err := rand.Read(token)
     if err !=  nil {
-        return nil, err
+        return "", err
     }
-    return token, err
+
+    return base64.URLEncoding.EncodeToString(token), nil
 }

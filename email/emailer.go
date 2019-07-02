@@ -13,7 +13,7 @@ import(
 
 var auth smtp.Auth
 
-func Send(name string, email string, url string) *models.ApiError {
+func Send(name string, email string, url string, template string) *models.ApiError {
     auth = smtp.PlainAuth ("", config.MailAuthUser, config.MailAuthPass, config.MailHost)
    
     emailData := struct {
@@ -25,7 +25,7 @@ func Send(name string, email string, url string) *models.ApiError {
     }
 
     r := NewRequest([]string{email}, "Hello", "Hello world")
-    if err := r.ParseTemplate("email/email.html", emailData); err == nil {
+    if err := r.ParseTemplate(template, emailData); err == nil {
         ok, err := r.SendEmail()
         if err != nil { panic(err.Err) }
         fmt.Print("mail sent ")

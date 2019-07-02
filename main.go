@@ -35,6 +35,7 @@ func main() {
     r.POST("/createUser", env.createUser)
     r.POST("/login", env.login)
     r.POST("/sendMail", env.sendMail)
+    r.GET("/confirmEmail", env.confirmEmail)
     r.Run(":8080")
 }
 
@@ -90,9 +91,14 @@ func (e *Env) login (c *gin.Context) {
 
 func (e *Env) sendMail (c *gin.Context) {
     // This is a test handler to send emails to a user
-    err := email.Send("James", "jamezy850@gmail.com", "jameselgar.com")
+    err := email.Send("James", "jamezy850@gmail.com", "jameselgar.com", "email/email.html")
     if err != nil {
         panic(err) 
     }
 
+}
+
+func (e *Env) confirmEmail (c *gin.Context) {
+    token := c.Query("token")
+    fmt.Println(token)
 }
