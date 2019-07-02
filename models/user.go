@@ -108,6 +108,10 @@ func (db *DB) VerfUserEmail(token string) *errors.ApiError {
         return &errors.ApiError{err, "Could not update email verif", 500}
     }
     fmt.Println("Email Verified")
+
+    // TODO if email verified redirect to sign in, if not redirect to 404 
+    // What am I saying this is definately a front end thing
+    // Actaully no need a way to say no cells were changed so need to maybe count user or osomething idk, does SQl return number of cells changed?
     return nil
 }
 
