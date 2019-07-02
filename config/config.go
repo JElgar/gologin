@@ -10,7 +10,7 @@ var (
 )
 
 MailAuthUser = "jamesnelgar@gmail.com"
-MailAuthPass = "XXXXXXXXXX"
+MailAuthPass = "test"
 MailHost = "smtp.gmail.com"
 MailHostPort = "587"
 
