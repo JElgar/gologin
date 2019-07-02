@@ -1,7 +1,7 @@
 package email
 
 import(
-   models "github.com/jelgar/login/models"
+   errors "github.com/jelgar/login/errors"
    config "github.com/jelgar/login/config"
 
    smtp "net/smtp"
@@ -13,7 +13,7 @@ import(
 
 var auth smtp.Auth
 
-func Send(name string, email string, url string, template string) *models.ApiError {
+func Send(name string, email string, url string, template string) *errors.ApiError {
     auth = smtp.PlainAuth ("", config.MailAuthUser, config.MailAuthPass, config.MailHost)
    
     emailData := struct {
@@ -31,7 +31,7 @@ func Send(name string, email string, url string, template string) *models.ApiErr
         fmt.Print("mail sent ")
         fmt.Println(ok)
         return nil
-    } else { return &models.ApiError{err, err.Message, 500} }
+    } else { return &errors.ApiError{err, err.Message, 500} }
 }
 
 type Request struct {
@@ -49,18 +49,18 @@ func NewRequest(to []string, subject, body string) *Request {
 	}
 }
 
-func (r *Request) SendEmail() (bool, *models.ApiError) {
+func (r *Request) SendEmail() (bool, *errors.ApiError) {
     mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
     subject := "Subject: " + r.subject + "\n"
     msg := []byte(subject + mime + "\n" + r.body)
 //    addr := config.MailHost + ":" + config.MailHostPort
 
     if err := smtp.SendMail("smtp.gmail.com:587", auth, config.MailAuthUser, r.to, msg); err != nil {
-		return false, &models.ApiError{err, "Email Failed to send", 500}
+		return false, &errors.ApiError{err, "Email Failed to send", 500}
 	}
 
 	//if err := smtp.SendMail(addr, auth, config.MailAuthUser, r.to, msg); err != nil {
-//		return false, &models.ApiError{err, "Email Failed to send", 500}
+//		return false, &errors.ApiError{err, "Email Failed to send", 500}
 //	}
 	return true, nil
 
@@ -68,14 +68,14 @@ func (r *Request) SendEmail() (bool, *models.ApiError) {
 
 
 // Need to work out how this works as i just copied it :D
-func (r *Request) ParseTemplate(templateFileName string, data interface{}) *models.ApiError {
+func (r *Request) ParseTemplate(templateFileName string, data interface{}) *errors.ApiError {
 	t, err := template.ParseFiles(templateFileName)
 	if err != nil {
-		return &models.ApiError{err, "Error getting email template", 500}
+		return &errors.ApiError{err, "Error getting email template", 500}
 	}
 	buf := new(bytes.Buffer)
 	if err = t.Execute(buf, data); err != nil {
-		return &models.ApiError{err, "Template Issue", 500}
+		return &errors.ApiError{err, "Template Issue", 500}
 	}
 	r.body = buf.String()
 	return nil

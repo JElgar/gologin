@@ -5,12 +5,13 @@ import(
     "fmt"
     "crypto/rand"
     "encoding/base64"
+    errors "github.com/jelgar/login/errors"
 )
 
 type UserStore interface {
-    GetUser(u *User) (FullUser, *ApiError)
-    CreateUser(u *User) (FullUser, *ApiError)
-    Login(u *User) (FullUser, *ApiError)
+    GetUser(u *User) (User, *errors.ApiError)
+    CreateUser(u *User) (User, *errors.ApiError)
+    Login(u *User) (User, *errors.ApiError)
 }
 
 // What types of users do I need?
@@ -18,41 +19,38 @@ type User struct {
     Username    string  `json:"username"`
     Password    string  `json:"password"`
     Email       string  `json:"email"`
-}
-
-type FullUser struct {
-    Username    string  `json:"username"`
     Name        string  `json:"name"`
-    Password    string  `json:"password"`
+    EmailToken  string  `json:"emailverif"`
 }
 
-func (db *DB) GetUser(iu *User) (FullUser, *ApiError){
+func (db *DB) GetUser(iu *User) (User, *errors.ApiError){
     // Do a transaction thing to get the user from the database... Need a good way of doing transactions
-    var u FullUser
+    var u User
     sqlStmt := `SELECT username, password FROM users WHERE username = $1;`
 
     if iu == nil {
-        return u, &ApiError{nil, "Cannot get NIL user", 400}
+        return u, &errors.ApiError{nil, "Cannot get NIL user", 400}
     } else if iu.Username == "" {
-        return u, &ApiError{nil, "Username Required", 400}
+        return u, &errors.ApiError{nil, "Username Required", 400}
     }
 
 
     res := db.QueryRow(sqlStmt, iu.Username)
     switch err := res.Scan(&u.Username, &u.Password); err {
         case sql.ErrNoRows:
-            return u, &ApiError{err, "User does not exist in database", 404}
+            return u, &errors.ApiError{err, "User does not exist in database", 404}
         case nil:
             return u, nil
         default:
-            return u, &ApiError{err, "Unknown Error during Query", 400}
+            return u, &errors.ApiError{err, "Unknown Error during Query", 400}
     }
 }
 
-func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
+func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
     fmt.Println("Entered Create user")
     // TODO Should probablby write function that takes statement and struct and bind
-    var fu FullUser
+    // TODO Find and replace and swap all instances of fu with empty user obj
+    var fu User
     sqlStmt := `INSERT INTO users (username, email, password, emailverif, token) VALUES($1,$2, $3, '0', $4);`
 
     // TODO Verify User is Valid
@@ -60,16 +58,16 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
     // If the user already exists
     if err == nil {
         // Error code 409 - conflict
-       return fu, &ApiError{nil, "The user already exists in the database", 409}
+       return fu, &errors.ApiError{nil, "The user already exists in the database", 409}
     } else if err.Code != 404 {
         // If there is an error but it is not because the user does not exist
-        return fu, &ApiError{err, "Error chechking if user exists", 500}
+        return fu, &errors.ApiError{err, "Error chechking if user exists", 500}
     }
 
     // Salt and hash the password (I know this isnt encyption but enc seemed like a nice name)
     encPassword, err := HashSaltPwd([]byte(u.Password))
     if err != nil {
-        return fu, &ApiError{err, "Failed to salt and hash password", 500}
+        return fu, &errors.ApiError{err, "Failed to salt and hash password", 500}
     }
     
     // Get a token for email verification
@@ -81,26 +79,26 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
 
     fmt.Println("Got the unique token")
     // TODO make sure only insert a max number of token items (so it doesnt go above 50)
-
     res, insertErr := db.Exec(sqlStmt, u.Username, u.Email, encPassword, token)
     switch insertErr{
         case nil:
             fmt.Println("User inserted")
             fmt.Println(res)
+            u.EmailToken = token
+            db.SendVerfEmail(u)
             return fu, nil
         default:
-            panic(insertErr)
-            return fu, &ApiError{err, "Unknown Error during Insertion of User", 400}
+            return fu, &errors.ApiError{err, "Unknown Error during Insertion of User", 400}
     }
-
-    db.SendVerfEmail(fu)
 }
 
 func (db *DB) SendVerfEmail(u *User) {
-    
+    // TODO This needs to be more flexible, cant be looking for this inhere everytime
+    url := "http://localhost:8080/" + "confirmEmaili?token=" + token
+   mail.Send(u.Username, u.Email, url, "email/email.html") 
 }
 
-func (db *DB) Login (u *User) (FullUser, *ApiError) {
+func (db *DB) Login (u *User) (User, *errors.ApiError) {
     dbUser, err := db.GetUser(u)
     if err != nil {
         // DO THE CHECKS
@@ -111,7 +109,7 @@ func (db *DB) Login (u *User) (FullUser, *ApiError) {
     }
     if (!isSame) {
         fmt.Println("Incorrect Pssword")
-        return dbUser, &ApiError{nil, "Password does not match", 401}
+        return dbUser, &errors.ApiError{nil, "Password does not match", 401}
     }
 
     fmt.Print("Encrypted Passwords Match")
