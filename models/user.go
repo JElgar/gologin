@@ -7,6 +7,7 @@ import(
     "encoding/base64"
     errors "github.com/jelgar/login/errors"
     mail "github.com/jelgar/login/email"
+    config "github.com/jelgar/login/config"
 )
 
 type UserStore interface {
@@ -96,8 +97,8 @@ func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
 
 func (db *DB) SendVerfEmail(u *User) {
     // TODO This needs to be more flexible, cant be looking for this inhere everytime
-    url := "http://localhost:8080/" + "confirmEmail?token=" + u.EmailToken
-    mail.Send(u.Username, u.Email, url, "email/email.html") 
+    url := config.Domain + "/confirmEmail?token=" + u.EmailToken
+    mail.Send(u.Username, u.Email, url, "email/email.html")
 }
 
 func (db *DB) VerfUserEmail(token string) *errors.ApiError {
