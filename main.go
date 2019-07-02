@@ -4,17 +4,22 @@ import (
 //   "database/sql"
    models "github.com/jelgar/login/models"
    email "github.com/jelgar/login/email"
+   config "github.com/jelgar/login/config"
    "log"
    "fmt"
    "github.com/gin-gonic/gin"
 )
 
-// Put this is models later
+
+// Stuct to store environment variables for application
 type Env struct {
     db models.Datastore
 }
 
 func main() {
+
+    config.InitConfig()
+
     db, err := models.InitDB("postgresql://admin:test123@ec2-35-178-198-24.eu-west-2.compute.amazonaws.com/secta?sslmode=disable")
     if err != nil {
         log.Panic(err)
@@ -29,6 +34,7 @@ func main() {
     r.GET("/user", env.getUser)
     r.POST("/createUser", env.createUser)
     r.POST("/login", env.login)
+    r.POST("/sendMail", env.sendMail)
     r.Run(":8080")
 }
 
@@ -64,6 +70,7 @@ func (e *Env) createUser (c *gin.Context){
     if err != nil && err.Code == 409 {
         fmt.Print("User already exists")
         // TODO Deal with case of collision --> this error code is currently coming out wrong (is 500 should be 409 plz fix 
+        // Actauly may be wokring need to check
     } else if err != nil {
         fmt.Println(err.Message)
         panic(err)
@@ -81,6 +88,11 @@ func (e *Env) login (c *gin.Context) {
     fmt.Println(user)
 }
 
-func sendMail () {
+func (e *Env) sendMail (c *gin.Context) {
     // This is a test handler to send emails to a user
+    err := email.Send("James", "jamezy850@gmail.com", "jameselgar.com")
+    if err != nil {
+        panic(err) 
+    }
+
 }

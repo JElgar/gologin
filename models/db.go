@@ -41,3 +41,18 @@ func (db *DB) Begin() (*Tx, error) {
     }
     return &Tx{tx}, nil
 }
+
+// May want to move this into a seperate db package/file at somepoint ?
+// Given a table, column and some data, checks if that data already exists in the column
+func (db *DB) IsUnique(data interface{}, table string, column string) (bool, error){
+    var count int
+    sqlStmt := `SELECT COUNT($1) FROM $2 WHERE username = $3;`
+    row := db.QueryRow(sqlStmt, column, table, data)
+    if err := row.Scan(&count); err != nil {
+        return false, err
+    }
+    if count != 0 {
+        return false, nil
+    }
+    return true, nil
+}

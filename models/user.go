@@ -3,6 +3,7 @@ package models
 import(
     "database/sql"
     "fmt"
+    "crypto/rand"
 )
 
 type UserStore interface {
@@ -50,7 +51,7 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
     fmt.Println("Entered Create user")
     // TODO Should probablby write function that takes statement and struct and bind
     var fu FullUser
-    sqlStmt := `INSERT INTO users (username, password) VALUES($1,$2);`
+    sqlStmt := `INSERT INTO users (username, password, emailverif, token) VALUES($1,$2, 0, $3);`
 
     // TODO Verify User is Valid
     _ , err := db.GetUser(u)
@@ -63,11 +64,19 @@ func (db *DB) CreateUser(u *User) (FullUser, *ApiError) {
         return fu, &ApiError{err, "Error chechking if user exists", 500}
     }
 
+    // Salt and hash the password (I know this isnt encyption but enc seemed like a nice name)
     encPassword, err := HashSaltPwd([]byte(u.Password))
     if err != nil {
         return fu, &ApiError{err, "Failed to salt and hash password", 500}
     }
-    res, insertErr := db.Exec(sqlStmt, u.Username, encPassword)
+    
+    // Get a token for email verification
+    token, erro := db.getUniqueToken()
+    if erro != nil {
+        panic(erro)
+    }
+
+    res, insertErr := db.Exec(sqlStmt, u.Username, encPassword, token)
     switch insertErr{
         case nil:
             fmt.Println("User inserted")
@@ -94,4 +103,43 @@ func (db *DB) Login (u *User) (FullUser, *ApiError) {
 
     fmt.Print("Encrypted Passwords Match")
     return dbUser, nil
+}
+
+// Generate a random token to assign to a user for password reset or email verification. Generates random token and assures it is unique in database
+func (db *DB) getUniqueToken() ([]byte, error){
+    unique := false
+    var key []byte
+    var err error
+
+    for !unique {
+        key, err = getToken()
+        if err != nil {
+            return nil, err
+        }
+        unique, err = db.tokenIsUnique(key)
+        if err != nil {
+            return nil, err
+        }
+    }
+    return key, nil
+}
+
+func (db *DB) tokenIsUnique (token []byte) (bool, error) {
+    unique, err := db.IsUnique(token, "users", "token")
+    if err != nil{
+        return false, err
+    }
+    if !unique {
+        return false, nil
+    }
+    return true, nil
+}
+
+func getToken() ([]byte, error) {
+    token := make([]byte, 20)
+    _, err := rand.Read(token)
+    if err !=  nil {
+        return nil, err
+    }
+    return token, err
 }
