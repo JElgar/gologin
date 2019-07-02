@@ -6,12 +6,14 @@ import(
     "crypto/rand"
     "encoding/base64"
     errors "github.com/jelgar/login/errors"
+    mail "github.com/jelgar/login/email"
 )
 
 type UserStore interface {
     GetUser(u *User) (User, *errors.ApiError)
     CreateUser(u *User) (User, *errors.ApiError)
     Login(u *User) (User, *errors.ApiError)
+    VerfUserEmail(token string) *errors.ApiError
 }
 
 // What types of users do I need?
@@ -94,8 +96,18 @@ func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
 
 func (db *DB) SendVerfEmail(u *User) {
     // TODO This needs to be more flexible, cant be looking for this inhere everytime
-    url := "http://localhost:8080/" + "confirmEmaili?token=" + token
-   mail.Send(u.Username, u.Email, url, "email/email.html") 
+    url := "http://localhost:8080/" + "confirmEmail?token=" + u.EmailToken
+    mail.Send(u.Username, u.Email, url, "email/email.html") 
+}
+
+func (db *DB) VerfUserEmail(token string) *errors.ApiError {
+    sqlStmt := `UPDATE users SET emailverif='1' WHERE token=$1;`
+    _, err := db.Exec(sqlStmt, token)
+    if (err != nil) {
+        return &errors.ApiError{err, "Could not update email verif", 500}
+    }
+    fmt.Println("Email Verified")
+    return nil
 }
 
 func (db *DB) Login (u *User) (User, *errors.ApiError) {

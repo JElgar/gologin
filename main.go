@@ -101,4 +101,5 @@ func (e *Env) sendMail (c *gin.Context) {
 func (e *Env) confirmEmail (c *gin.Context) {
     token := c.Query("token")
     fmt.Println(token)
+    e.db.VerfUserEmail(token)
 }
