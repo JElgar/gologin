@@ -3,6 +3,7 @@ package main
 import (
 //   "database/sql"
    models "github.com/jelgar/login/models"
+   email "github.com/jelgar/login/email"
    "log"
    "fmt"
    "github.com/gin-gonic/gin"
@@ -37,6 +38,8 @@ func ping(c *gin.Context){
     })
 }
 
+// Get user accepts a JSON object contains the username of the user it wishes to find
+// Get this working for email
 func (e *Env) getUser (c *gin.Context) {
     var u models.User
     c.BindJSON(&u)
@@ -76,4 +79,8 @@ func (e *Env) login (c *gin.Context) {
     if err != nil {
     }
     fmt.Println(user)
+}
+
+func sendMail () {
+    // This is a test handler to send emails to a user
 }
