@@ -3,11 +3,7 @@ package models
 import(
     "database/sql"
     "fmt"
-    "crypto/rand"
-    "encoding/base64"
     errors "github.com/jelgar/login/errors"
-    mail "github.com/jelgar/login/email"
-    config "github.com/jelgar/login/config"
 )
 
 type UserStore interface {
@@ -95,25 +91,6 @@ func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
     }
 }
 
-func (db *DB) SendVerfEmail(u *User) {
-    // TODO This needs to be more flexible, cant be looking for this inhere everytime
-    url := config.Domain + "/confirmEmail?token=" + u.EmailToken
-    mail.Send(u.Username, u.Email, url, "email/email.html")
-}
-
-func (db *DB) VerfUserEmail(token string) *errors.ApiError {
-    sqlStmt := `UPDATE users SET emailverif='1' WHERE token=$1;`
-    _, err := db.Exec(sqlStmt, token)
-    if (err != nil) {
-        return &errors.ApiError{err, "Could not update email verif", 500}
-    }
-    fmt.Println("Email Verified")
-
-    // TODO if email verified redirect to sign in, if not redirect to 404 
-    // What am I saying this is definately a front end thing
-    // Actaully no need a way to say no cells were changed so need to maybe count user or osomething idk, does SQl return number of cells changed?
-    return nil
-}
 
 func (db *DB) Login (u *User) (User, *errors.ApiError) {
     dbUser, err := db.GetUser(u)
@@ -133,43 +110,3 @@ func (db *DB) Login (u *User) (User, *errors.ApiError) {
     return dbUser, nil
 }
 
-// Generate a random token to assign to a user for password reset or email verification. Generates random token and assures it is unique in database
-func (db *DB) getUniqueToken() (string, error){
-    unique := false
-    var key string
-    var err error
-
-    for !unique {
-        key, err = getToken(20)
-        if err != nil {
-            return "", err
-        }
-        unique, err = db.tokenIsUnique(key)
-        if err != nil {
-            return "", err
-        }
-    }
-    return key, nil
-}
-
-func (db *DB) tokenIsUnique (token string) (bool, error) {
-    fmt.Println("Checking if token is unique")
-    unique, err := db.IsUnique(token, "users", "token")
-    if err != nil{
-        return false, err
-    }
-    if !unique {
-        return false, nil
-    }
-    return true, nil
-}
-
-func getToken(length int) (string, error) {
-    token := make([]byte, length)
-    _, err := rand.Read(token)
-    if err !=  nil {
-        return "", err
-    }
-
-    return base64.URLEncoding.EncodeToString(token), nil
-}
