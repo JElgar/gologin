@@ -5,6 +5,7 @@ import (
    email "github.com/jelgar/login/email"
    "fmt"
    "github.com/gin-gonic/gin"
+   "time"
 )
 
 func SetupRouter(env *Env) *gin.Engine {
@@ -68,21 +69,50 @@ func (e *Env) login (c *gin.Context) {
     if err != nil {
         // TODO return the correct stuff here
         // Ie return actaul json with gin dont just print some random stuff out
-        switch err.Code {
-            // 401 -> Incorrect password
-            case 401:
-                fmt.Println("Incorrect Password")
-            case 404:
-                fmt.Println("User does not exist")
-            case 500:
-                fmt.Println("Uknown error so so sorry")
-            default:
-                fmt.Println("retunr a 500 -> Unknown error")
-        }
+        // THis isnt really needed anymore
+        //switch err.Code {
+        //    // 401 -> Incorrect password
+        //    case 401:
+        //        fmt.Println("Incorrect Password")
+        //        c.JSON(err.Code, err)
+        //        return
+        //    case 404:
+        //        fmt.Println("User does not exist")
+        //        c.JSON(err.Code, err)
+        //        return 
+        //    case 500:
+        //        fmt.Println("Uknown error so so sorry")
+        //        c.JSON(err.Code, err)
+        //        return 
+        //    default:
+        //        fmt.Println("retunr a 500 -> Unknown error")
+        //        c.JSON(err.Code, err)
+        //        return 
+        //}
+        c.JSON(err.Code, err)
+        return
     }
     fmt.Println(user)
     // If user exists return a JWT being like yup and err nill
     // Otherwise return no JWT and be like that this was the error -> eg no user
+
+    expirationTime := time.Now().Add(5 * time.Minute)
+
+    claims := &models.Claims {
+        Username: user.Username,
+        StandardClaims: models.NewStandardClaims(expirationTime),
+    }
+    token := models.NewJWT(models.DefaultSignMethod(), claims)
+
+    tokenString, erro := token.SignedString(models.GetKey())
+    if erro != nil {
+        fmt.Println("Error making token into signed string")
+    }
+    
+    c.JSON(200, gin.H{
+        "token": tokenString,
+    })
+
 }
 
 func (e *Env) sendMail (c *gin.Context) {

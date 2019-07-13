@@ -99,11 +99,11 @@ func (db *DB) Login (u *User) (User, *errors.ApiError) {
             case 400:
                 // This should not be 400 this is a definately the wrong number
                 // But then it kind of could be an internal server error cause front end should never allow the input of a empty ting so idk but then no this isnt so 400 is so wrong
-                return dbuser, &errors.ApiError{nil, "Invalid input of user credentials when checking if user existed during login", 400}
+                return dbUser, &errors.ApiError{nil, "Invalid input of user credentials when checking if user existed during login", 400}
             case 404:
                 return dbUser, &errors.ApiError{nil, "User that is trying to login does not exist in database", 404}
             default:
-                return dbuser, &errors.ApiError{nil, "Uknown error when trying to check if loging in user exists", 500}
+                return dbUser, &errors.ApiError{nil, "Uknown error when trying to check if loging in user exists", 500}
         }
     }
     isSame, err := ComparePassword(dbUser.Password, []byte(u.Password))
