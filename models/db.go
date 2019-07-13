@@ -45,6 +45,7 @@ func (db *DB) Begin() (*Tx, error) {
 
 // May want to move this into a seperate db package/file at somepoint ?
 // Given a table, column and some data, checks if that data already exists in the column
+// If you dont hate everything dont do this...
 func (db *DB) IsUnique(data interface{}, table string, column string) (bool, error){
     var count int
     var sqlStmt string

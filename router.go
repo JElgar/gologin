@@ -66,8 +66,23 @@ func (e *Env) login (c *gin.Context) {
 
     user, err := e.db.Login(&u)
     if err != nil {
+        // TODO return the correct stuff here
+        // Ie return actaul json with gin dont just print some random stuff out
+        switch err.Code {
+            // 401 -> Incorrect password
+            case 401:
+                fmt.Println("Incorrect Password")
+            case 404:
+                fmt.Println("User does not exist")
+            case 500:
+                fmt.Println("Uknown error so so sorry")
+            default:
+                fmt.Println("retunr a 500 -> Unknown error")
+        }
     }
     fmt.Println(user)
+    // If user exists return a JWT being like yup and err nill
+    // Otherwise return no JWT and be like that this was the error -> eg no user
 }
 
 func (e *Env) sendMail (c *gin.Context) {
