@@ -3,9 +3,12 @@ package main
 import (
    models "github.com/jelgar/login/models"
    email "github.com/jelgar/login/email"
+   errors "github.com/jelgar/login/errors"
    "fmt"
    "github.com/gin-gonic/gin"
    "time"
+   "net/http"
+//   "net/url"
 )
 
 func SetupRouter(env *Env) *gin.Engine {
@@ -16,6 +19,7 @@ func SetupRouter(env *Env) *gin.Engine {
     r.POST("/login", env.login)
     r.POST("/sendMail", env.sendMail)
     r.GET("/confirmEmail", env.confirmEmail)
+    r.GET("/welcome", welcome)
 
     return r
 }
@@ -25,6 +29,49 @@ func ping(c *gin.Context){
     c.JSON(200, gin.H{
         "world": "Hello",
     })
+}
+
+// This is a function to test the json webtoken authentication
+func welcome (c *gin.Context) {
+    cookie, err := c.Cookie("token")
+    fmt.Println("Welcome")
+    fmt.Println(cookie)
+
+    //cookie, err := c.Request.Cookie("token")
+    if err != nil {
+        if err == http.ErrNoCookie {
+            // If the cookie is not set, return an unauthorized status
+            fmt.Println("Cookie not set")
+            c.JSON(400, errors.ApiError{err, "No cookie supplied", 400})
+	        return
+        }
+        c.JSON(500, errors.ApiError{err, "Error getting cookie", 400})
+		return
+	}
+    //tokenString, err := url.QueryUnescape(cookie.Value)
+    claims := &models.Claims{}
+
+    token, erro := models.ParseWClaims(cookie, claims)
+
+    if !token.Valid {
+        fmt.Println("Invalid Token")
+        return 
+    }
+
+    if erro != nil {
+        if erro == models.ErrSignatureInvalid{
+            fmt.Println("Invalid Signature")
+            return
+        }
+        fmt.Println("Unknown error")
+        return
+    }
+    
+    c.JSON(200, gin.H{
+        "Message": "Hello, ",
+        "Username": claims.Username,
+    })
+
 }
 
 // Get user accepts a JSON object contains the username of the user it wishes to find
@@ -109,10 +156,14 @@ func (e *Env) login (c *gin.Context) {
         fmt.Println("Error making token into signed string")
     }
     
-    c.JSON(200, gin.H{
-        "token": tokenString,
-    })
-
+    c.SetCookie(
+        "token",
+        tokenString,
+        3600,
+        "/",
+        "",
+        false,
+        false)
 }
 
 func (e *Env) sendMail (c *gin.Context) {

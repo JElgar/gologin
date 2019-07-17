@@ -10,6 +10,11 @@ import (
 
 // Object encoded in JWT to give claim/permissions of user
 // jwt.StandardClaims is an embedded type (sounds pretty cool need to google it tbh) but that gives otherfields to the struct such as expiry time
+
+var jwtKey []byte = config.SecretKey
+
+var ErrSignatureInvalid error = jwt.ErrSignatureInvalid
+
 type Claims struct {
     Username string `json:"username"`
     jwt.StandardClaims
@@ -31,5 +36,12 @@ func NewStandardClaims(time time.Time) jwt.StandardClaims {
 }
 
 func GetKey() []byte {
-    return config.SecretKey
+    return jwtKey
 }
+
+func ParseWClaims(tokenString string, claims jwt.Claims) (*jwt.Token, error) {
+    return jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+}
+
