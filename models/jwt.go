@@ -54,6 +54,6 @@ func ParseWClaims(tokenString string, claims jwt.Claims) (*jwt.Token, error) {
 //func Refresh
 
 // Need to write a validate function so i dont have to redo this every time
-func ValidateToken(g gin.HandlerFunc) gin.HandlerFunc {
-    return g
-}
+//func ValidateToken(g gin.HandlerFunc) gin.HandlerFunc {
+//    return g
+//}

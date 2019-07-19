@@ -15,19 +15,59 @@ func SetupRouter(env *Env) *gin.Engine {
     r := gin.Default()
     // guessing this is pretty handy for version control :D
     api := r.Group("api/v1")
+
+    tokenAuth := api.Group("/")
+    tokenAuth.Use(AuthRequired())
+
+
     api.GET("/ping", ping)
     api.GET("/user", env.getUser)
     api.POST("/createUser", env.createUser)
     api.POST("/login", env.login)
     api.POST("/sendMail", env.sendMail)
     api.GET("/confirmEmail", env.confirmEmail)
-    api.GET("/welcome", welcome)
+    tokenAuth.GET("/welcome", welcome)
 
     return r
 }
 
-func test () {
-    fmt.Println("test")
+func AuthRequired() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        fmt.Println("Hello")
+        cookie, err := c.Cookie("token")
+        fmt.Println(cookie)
+
+        //cookie, err := c.Request.Cookie("token")
+        if err != nil {
+            if err == http.ErrNoCookie {
+                // If the cookie is not set, return an unauthorized status
+                fmt.Println("Cookie not set")
+                c.JSON(400, errors.ApiError{err, "No cookie supplied", 400})
+	            return
+            }
+            c.JSON(500, errors.ApiError{err, "Error getting cookie", 400})
+	    	return
+	    }
+        //tokenString, err := url.QueryUnescape(cookie.Value)
+        claims := &models.Claims{}
+
+        token, erro := models.ParseWClaims(cookie, claims)
+
+        if !token.Valid {
+            fmt.Println("Invalid Token")
+            return
+        }
+
+        if erro != nil {
+            if erro == models.ErrSignatureInvalid{
+                fmt.Println("Invalid Signature")
+                return
+            }
+            fmt.Println("Unknown error")
+            return
+        }
+        c.Next()
+    }
 }
 
 func ping(c *gin.Context){
@@ -39,40 +79,6 @@ func ping(c *gin.Context){
 // This is a function to test the json webtoken authentication
 // TODO split this authorization step into an external jwt function
 func welcome (c *gin.Context) {
-    cookie, err := c.Cookie("token")
-    fmt.Println("Welcome")
-    fmt.Println(cookie)
-
-    //cookie, err := c.Request.Cookie("token")
-    if err != nil {
-        if err == http.ErrNoCookie {
-            // If the cookie is not set, return an unauthorized status
-            fmt.Println("Cookie not set")
-            c.JSON(400, errors.ApiError{err, "No cookie supplied", 400})
-	        return
-        }
-        c.JSON(500, errors.ApiError{err, "Error getting cookie", 400})
-		return
-	}
-    //tokenString, err := url.QueryUnescape(cookie.Value)
-    claims := &models.Claims{}
-
-    token, erro := models.ParseWClaims(cookie, claims)
-
-    if !token.Valid {
-        fmt.Println("Invalid Token")
-        return 
-    }
-
-    if erro != nil {
-        if erro == models.ErrSignatureInvalid{
-            fmt.Println("Invalid Signature")
-            return
-        }
-        fmt.Println("Unknown error")
-        return
-    }
-    
     c.JSON(200, gin.H{
         "Message": "Hello, ",
         "Username": claims.Username,
