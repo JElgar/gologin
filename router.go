@@ -13,17 +13,22 @@ import (
 
 func SetupRouter(env *Env) *gin.Engine {
     r := gin.Default()
-    r.GET("/ping", ping)
-    r.GET("/user", env.getUser)
-    r.POST("/createUser", env.createUser)
-    r.POST("/login", env.login)
-    r.POST("/sendMail", env.sendMail)
-    r.GET("/confirmEmail", env.confirmEmail)
-    r.GET("/welcome", welcome)
+    // guessing this is pretty handy for version control :D
+    api := r.Group("api/v1")
+    api.GET("/ping", ping)
+    api.GET("/user", env.getUser)
+    api.POST("/createUser", env.createUser)
+    api.POST("/login", env.login)
+    api.POST("/sendMail", env.sendMail)
+    api.GET("/confirmEmail", env.confirmEmail)
+    api.GET("/welcome", welcome)
 
     return r
 }
 
+func test () {
+    fmt.Println("test")
+}
 
 func ping(c *gin.Context){
     c.JSON(200, gin.H{
@@ -32,6 +37,7 @@ func ping(c *gin.Context){
 }
 
 // This is a function to test the json webtoken authentication
+// TODO split this authorization step into an external jwt function
 func welcome (c *gin.Context) {
     cookie, err := c.Cookie("token")
     fmt.Println("Welcome")
