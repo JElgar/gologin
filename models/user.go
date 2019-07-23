@@ -11,6 +11,7 @@ type UserStore interface {
     CreateUser(u *User) (User, *errors.ApiError)
     Login(u *User) (User, *errors.ApiError)
     VerfUserEmail(token string) *errors.ApiError
+    PasswordRest(token string) *errors.ApiError
 }
 
 // What types of users do I need?
@@ -69,11 +70,12 @@ func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
         return fu, &errors.ApiError{err, "Failed to salt and hash password", 500}
     }
     
+    // TODO Change this into a transaction so i add the token after so i can a seperate token function maybe? Possily not?
+
     // Get a token for email verification
     token, erro := db.getUniqueToken()
     if erro != nil {
-        fmt.Println("There was an error gettign the unique token")
-        panic(erro)
+        return fu, &errors.ApiError{nil, "There was an error gettign a unique token for email verif", 401}
     }
 
     fmt.Println("Got the unique token")
@@ -108,7 +110,7 @@ func (db *DB) Login (u *User) (User, *errors.ApiError) {
     }
     isSame, err := ComparePassword(dbUser.Password, []byte(u.Password))
     if err != nil {
-        // DO the thing
+        return dbUser, &errors.ApiError{nil, "Error comparing users", 401}
     }
     if (!isSame) {
         fmt.Println("Incorrect Pssword")
@@ -119,3 +121,15 @@ func (db *DB) Login (u *User) (User, *errors.ApiError) {
     return dbUser, nil
 }
 
+
+// TODO Ok im writting this comment to try and work out what im supposed to be doing. So... I have a routers section that calls this section to do stuff. Do i not want to split up these functions into smaller fucntions causes like atm some of them are huge/repetative. But then i feel like i need another layer or something like so i can simply send sql commands/transaction to the db and have seperate thing for idk ... Im lost ??? Maybe i will jsut keep doing what im doing but if it get repetative im gonna need to change plans
+// Oh the reason i had this moment now was because either i could write settoken or i could do a whole passwrod reset function.... surely it better to split up right?
+
+// TODO also add these extra function to the UserDatastroe interface
+func (db *DB) SetToken (u *User) (*errors.ApiError) {
+    return nil
+}
+
+func (db *DB) PasswordRest (string) (*errors.ApiError) {
+    return nil
+}

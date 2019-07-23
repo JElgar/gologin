@@ -24,6 +24,8 @@ func SetupRouter(env *Env) *gin.Engine {
     api.GET("/user", env.getUser)
     api.POST("/createUser", env.createUser)
     api.POST("/login", env.login)
+    api.GET("/resetPasswordRequest", env.passResetRequest)
+    api.GET("/resetPassword", env.passReset)
     api.POST("/sendMail", env.sendMail)
     api.GET("/confirmEmail", env.confirmEmail)
     tokenAuth.GET("/welcome", welcome)
@@ -31,6 +33,7 @@ func SetupRouter(env *Env) *gin.Engine {
     return r
 }
 
+// TODO do i check that the token hasnt expired
 func AuthRequired() gin.HandlerFunc {
     return func(c *gin.Context) {
         fmt.Println("Hello")
@@ -70,6 +73,16 @@ func AuthRequired() gin.HandlerFunc {
     }
 }
 
+// TODO Hope there is a better way to do this than needin this function havin already authed. Need to look at concurency at some point 
+// I could just use an auth function at the start of each secure endpoint but i feel like this is a bit naff
+func getClaimsNoErrChecking(c *gin.Context) *models.Claims {
+        cookie, _ := c.Cookie("token")
+        claims := &models.Claims{}
+
+        models.ParseWClaims(cookie, claims)
+        return claims
+}
+
 func ping(c *gin.Context){
     c.JSON(200, gin.H{
         "world": "Hello",
@@ -78,7 +91,9 @@ func ping(c *gin.Context){
 
 // This is a function to test the json webtoken authentication
 // TODO split this authorization step into an external jwt function
+// Or middleware that works too :D 
 func welcome (c *gin.Context) {
+    claims := getClaimsNoErrChecking(c)
     c.JSON(200, gin.H{
         "Message": "Hello, ",
         "Username": claims.Username,
@@ -97,6 +112,7 @@ func (e *Env) getUser (c *gin.Context) {
         if (err.Code == 404){
             fmt.Println("User doesn't exist")
         }else {
+            // TODO Definately dont panic here do c.thingy or whatever
             panic(err)
         }
     }
@@ -115,6 +131,7 @@ func (e *Env) createUser (c *gin.Context){
         // Actauly may be wokring need to check
     } else if err != nil {
         fmt.Println(err.Message)
+        // TODO STOP PANICING
         panic(err)
     }
     fmt.Println(user)
@@ -155,6 +172,8 @@ func (e *Env) login (c *gin.Context) {
     // If user exists return a JWT being like yup and err nill
     // Otherwise return no JWT and be like that this was the error -> eg no user
 
+    // TODO Can i do some of this elsewhere or it this alright?
+
     expirationTime := time.Now().Add(5 * time.Minute)
 
     claims := &models.Claims {
@@ -167,7 +186,8 @@ func (e *Env) login (c *gin.Context) {
     if erro != nil {
         fmt.Println("Error making token into signed string")
     }
-    
+   
+    // TODO making these both false seemed to fix an issue but i dont want them to both be false im guessing 
     c.SetCookie(
         "token",
         tokenString,
@@ -178,17 +198,40 @@ func (e *Env) login (c *gin.Context) {
         false)
 }
 
+func (e *Env) passResetRequest(c *gin.Context) {
+   // Find user in database
+    var u models.User
+    c.BindJSON(&u)
+    //user, err := e.db.GetUser(&models.User{Username: "john", Password:"123"})
+    user, err := e.db.GetUser(&u)
+    if err != nil {
+        c.JSON(err.Code, err)
+        return
+    }
+    fmt.Println(user)
+   // Set token in datbases for password rest
+    
+   // Send email to user's email address with custom url
+
+   // 
+}
+
+func (e *Env) passReset(c *gin.Context) {
+    //token := c.Query("token")
+    //e.db.PasswordReset(token)
+}
+
+// ONLY FOR TESTING
 func (e *Env) sendMail (c *gin.Context) {
     // This is a test handler to send emails to a user
     err := email.Send("James", "jamezy850@gmail.com", "jameselgar.com", "email/email.html")
     if err != nil {
-        panic(err) 
+        panic(err)
     }
 
 }
 
 func (e *Env) confirmEmail (c *gin.Context) {
     token := c.Query("token")
-    fmt.Println(token)
     e.db.VerfUserEmail(token)
 }

@@ -4,7 +4,6 @@ import (
     "github.com/dgrijalva/jwt-go"
     "time"
     config "github.com/jelgar/login/config"
-    "github.com/gin-gonic/gin"
 )
 
 // Kinda tempted to make this a wrapper class of what i need from JWT libary so i can just swap it out with my own implemntation later but idk lets see what happens

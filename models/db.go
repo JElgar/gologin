@@ -6,7 +6,7 @@ import (
     "fmt"
 )
 
-// This interface will contain all the interfaces of the required operations of the Datastore. For example a user Datastore interface will be created and used to define all methods for user based operations.
+// This interface will contain all the interfaces of the required operations of the Datastore. For example a User Datastore interface will be created and used to define all methods for user based operations.
 type Datastore interface {
     UserStore
     Begin() (*Tx, error)
@@ -18,6 +18,7 @@ type DB struct {
 }
 
 // General transaction 
+// TODO havent really bothered to sort this out yet, so probably look into this
 type Tx struct {
     *sql.Tx
 }
@@ -46,6 +47,7 @@ func (db *DB) Begin() (*Tx, error) {
 // May want to move this into a seperate db package/file at somepoint ?
 // Given a table, column and some data, checks if that data already exists in the column
 // If you dont hate everything dont do this...
+// TODO check if this actually works
 func (db *DB) IsUnique(data interface{}, table string, column string) (bool, error){
     var count int
     var sqlStmt string

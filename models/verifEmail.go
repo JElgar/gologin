@@ -11,7 +11,7 @@ import (
 
 func (db *DB) SendVerfEmail(u *User) {
     // TODO dont forget to update domain
-    url := config.Domain + "/confirmEmail?token=" + u.EmailToken
+    url := config.Domain + "/api/" + "v" + config.Version + "/confirmEmail?token=" + u.EmailToken
     mail.Send(u.Username, u.Email, url, "email/email.html")
 }
 
