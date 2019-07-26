@@ -12,6 +12,8 @@ type UserStore interface {
     Login(u *User) (User, *errors.ApiError)
     VerfUserEmail(token string) *errors.ApiError
     PasswordRest(token string) *errors.ApiError
+    UpdateUserToken(u *User) (*errors.ApiError)
+    SendPassReset(u *User)
 }
 
 // What types of users do I need?
@@ -20,7 +22,8 @@ type User struct {
     Password    string  `json:"password"`
     Email       string  `json:"email"`
     Name        string  `json:"name"`
-    EmailToken  string  `json:"emailverif"`
+    EmailVerif  bool    `json:"emailverif"`
+    Token  string  `json:"emailverif"`
 }
 
 func (db *DB) GetUser(iu *User) (User, *errors.ApiError){
@@ -47,7 +50,6 @@ func (db *DB) GetUser(iu *User) (User, *errors.ApiError){
 }
 
 func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
-    fmt.Println("Entered Create user")
     // TODO Should probablby write function that takes statement and struct and bind
     // TODO Find and replace and swap all instances of fu with empty user obj
     var fu User
@@ -85,7 +87,7 @@ func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
         case nil:
             fmt.Println("User inserted")
             fmt.Println(res)
-            u.EmailToken = token
+            u.Token = token
             db.SendVerfEmail(u)
             return fu, nil
         default:
@@ -93,6 +95,20 @@ func (db *DB) CreateUser(u *User) (User, *errors.ApiError) {
     }
 }
 
+func (db *DB) UpdateUserToken(u *User) (*errors.ApiError){
+    token, erro := db.getUniqueToken()
+    if erro != nil {
+        return &errors.ApiError{nil, "There was an error gettign a unique token for tokekn update", 401}
+    }
+    sqlStmt := `INSERT INTO users (token) VALUES($1);`
+    _, insertErr := db.Exec(sqlStmt, token)
+    if insertErr != nil {
+        return &errors.ApiError{insertErr, "Error Updating Token in DB", 500}
+    }
+    u.Token = token
+    db.SendVerfEmail(u)
+    return nil
+}
 
 func (db *DB) Login (u *User) (User, *errors.ApiError) {
     dbUser, err := db.GetUser(u)

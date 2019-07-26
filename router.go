@@ -25,7 +25,7 @@ func SetupRouter(env *Env) *gin.Engine {
     api.POST("/createUser", env.createUser)
     api.POST("/login", env.login)
     api.GET("/resetPasswordRequest", env.passResetRequest)
-    api.GET("/resetPassword", env.passReset)
+    api.GET("/passwordReset", env.passReset)
     api.POST("/sendMail", env.sendMail)
     api.GET("/confirmEmail", env.confirmEmail)
     tokenAuth.GET("/welcome", welcome)
@@ -145,7 +145,7 @@ func (e *Env) login (c *gin.Context) {
     if err != nil {
         // TODO return the correct stuff here
         // Ie return actaul json with gin dont just print some random stuff out
-        // THis isnt really needed anymore
+        // TODO THis isnt really needed anymore
         //switch err.Code {
         //    // 401 -> Incorrect password
         //    case 401:
@@ -208,11 +208,23 @@ func (e *Env) passResetRequest(c *gin.Context) {
         c.JSON(err.Code, err)
         return
     }
+    if u.EmailVerif == false {
+
+        // TODO Actaully what we want here is to offer a email verification resend request
+        // I.e. redirect to newEmailVerif which will need to be made once ive done epiration times
+        // Bad request
+        c.JSON(400, errors.ApiError{nil, "Cannot reset password if email is not verified", 400})
+        return
+    }
     fmt.Println(user)
    // Set token in datbases for password rest
-    
+    erro := e.db.UpdateUserToken(&u)
+    if erro != nil {
+        c.JSON(erro.Code, erro)
+        return
+    }
    // Send email to user's email address with custom url
-
+    e.db.SendPassReset(&u)
    // 
 }
 

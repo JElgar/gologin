@@ -1,3 +1,5 @@
+// Ok im sorry but im really confused why this file exists. Im gonna use it for password reset now and Im so so sorry for that
+
 package models
 
 import (
@@ -9,9 +11,16 @@ import (
     config "github.com/jelgar/login/config"
 )
 
+func (db *DB) SendPassReset(u *User) {
+    // TODO change message!! Need to write new email function in email.go
+    // TODO TEMPLATE
+    url := config.Domain + "/api/" + "v" + config.Version + "/passwordReset?token=" + u.Token
+    mail.Send(u.Username, u.Email, url, "email/email.html")
+}
+
 func (db *DB) SendVerfEmail(u *User) {
-    // TODO dont forget to update domain
-    url := config.Domain + "/api/" + "v" + config.Version + "/confirmEmail?token=" + u.EmailToken
+    // TODO change message!! Need to write new email function in email.go
+    url := config.Domain + "/api/" + "v" + config.Version + "/confirmEmail?token=" + u.Token
     mail.Send(u.Username, u.Email, url, "email/email.html")
 }
 
