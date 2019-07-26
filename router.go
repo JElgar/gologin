@@ -117,6 +117,7 @@ func (e *Env) getUser (c *gin.Context) {
         }
     }
     fmt.Println(user)
+    user.Print()
 }
 
 func (e *Env) createUser (c *gin.Context){
@@ -208,8 +209,10 @@ func (e *Env) passResetRequest(c *gin.Context) {
         c.JSON(err.Code, err)
         return
     }
-    if u.EmailVerif == false {
-
+    if user.EmailVerif == false {
+        fmt.Println(user)
+        fmt.Println(u.EmailVerif)
+        user.Print()
         // TODO Actaully what we want here is to offer a email verification resend request
         // I.e. redirect to newEmailVerif which will need to be made once ive done epiration times
         // Bad request
@@ -224,7 +227,7 @@ func (e *Env) passResetRequest(c *gin.Context) {
         return
     }
    // Send email to user's email address with custom url
-    e.db.SendPassReset(&u)
+    e.db.SendPassReset(&user)
    // 
 }
 

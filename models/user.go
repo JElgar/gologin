@@ -23,13 +23,15 @@ type User struct {
     Email       string  `json:"email"`
     Name        string  `json:"name"`
     EmailVerif  bool    `json:"emailverif"`
-    Token  string  `json:"emailverif"`
+    Token       string
 }
 
 func (db *DB) GetUser(iu *User) (User, *errors.ApiError){
     // Do a transaction thing to get the user from the database... Need a good way of doing transactions
+
+    // TODO accept email as ID as well
     var u User
-    sqlStmt := `SELECT username, password FROM users WHERE username = $1;`
+    sqlStmt := `SELECT username, password, email, token, emailverif FROM users WHERE username = $1;`
 
     if iu == nil {
         return u, &errors.ApiError{nil, "Cannot get NIL user", 400}
@@ -39,13 +41,15 @@ func (db *DB) GetUser(iu *User) (User, *errors.ApiError){
 
 
     res := db.QueryRow(sqlStmt, iu.Username)
-    switch err := res.Scan(&u.Username, &u.Password); err {
+    err := res.Scan(&u.Username, &u.Password, &u.Email, &u.Token, &u.EmailVerif)
+    switch err {
         case sql.ErrNoRows:
             return u, &errors.ApiError{err, "User does not exist in database", 404}
         case nil:
             return u, nil
         default:
-            return u, &errors.ApiError{err, "Unknown Error during Query", 500}
+            panic (err)
+            return u, &errors.ApiError{err, "Unknown Error during Get User Query", 500}
     }
 }
 
@@ -100,13 +104,12 @@ func (db *DB) UpdateUserToken(u *User) (*errors.ApiError){
     if erro != nil {
         return &errors.ApiError{nil, "There was an error gettign a unique token for tokekn update", 401}
     }
-    sqlStmt := `INSERT INTO users (token) VALUES($1);`
-    _, insertErr := db.Exec(sqlStmt, token)
+    sqlStmt := `UPDATE users SET token=$1 WHERE username= $2;`
+    _, insertErr := db.Exec(sqlStmt, token, u.Username)
     if insertErr != nil {
         return &errors.ApiError{insertErr, "Error Updating Token in DB", 500}
     }
     u.Token = token
-    db.SendVerfEmail(u)
     return nil
 }
 
@@ -148,4 +151,20 @@ func (db *DB) SetToken (u *User) (*errors.ApiError) {
 
 func (db *DB) PasswordRest (string) (*errors.ApiError) {
     return nil
+}
+
+// Print all the user's information in a human readable way
+func (u *User) Print() {
+    fmt.Print("Username: ")
+    fmt.Println(u.Username)
+    fmt.Print("Password: ")
+    fmt.Println(u.Password)
+    fmt.Print("Email: ")
+    fmt.Println(u.Email)
+    fmt.Print("Name: ")
+    fmt.Println(u.Name)
+    fmt.Print("Email Verif: ")
+    fmt.Println(u.EmailVerif)
+    fmt.Print("Token: ")
+    fmt.Println(u.Token)
 }
