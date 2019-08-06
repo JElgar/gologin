@@ -11,8 +11,29 @@ import (
 //   "net/url"
 )
 
+// I think this is the middleware i need to make local stuff work :D (lets hope)
+func CORSMiddleware() gin.HandlerFunc {
+     return func(c *gin.Context) {
+         //print("Using middleware")
+         c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+         c.Writer.Header().Set("Access-Control-Max-Age", "86400")
+         c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
+         c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+         c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+         if c.Request.Method == "OPTIONS" {
+             c.AbortWithStatus(201)
+         } else {
+             c.Next()
+         }
+     }
+ }
+
 func SetupRouter(env *Env) *gin.Engine {
     r := gin.Default()
+    r.Use(CORSMiddleware())
+    
     // guessing this is pretty handy for version control :D
     api := r.Group("api/v1")
 
@@ -120,6 +141,8 @@ func (e *Env) getUser (c *gin.Context) {
     user.Print()
 }
 
+
+// TODO Handle errors here plz
 func (e *Env) createUser (c *gin.Context){
     // TODO on success return user and enventually JSON web token
     var u models.User
@@ -127,13 +150,12 @@ func (e *Env) createUser (c *gin.Context){
 
     user, err := e.db.CreateUser(&u)
     if err != nil && err.Code == 409 {
-        fmt.Print("User already exists")
+        c.JSON(err.Code, err)
+        return
         // TODO Deal with case of collision --> this error code is currently coming out wrong (is 500 should be 409 plz fix 
-        // Actauly may be wokring need to check
     } else if err != nil {
-        fmt.Println(err.Message)
-        // TODO STOP PANICING
-        panic(err)
+        c.JSON(err.Code, err)
+        return
     }
     fmt.Println(user)
 }
@@ -197,6 +219,7 @@ func (e *Env) login (c *gin.Context) {
         "",
         false,
         false)
+
 }
 
 func (e *Env) passResetRequest(c *gin.Context) {
@@ -231,9 +254,18 @@ func (e *Env) passResetRequest(c *gin.Context) {
    // 
 }
 
+// Ok so new plan
+// This endpoint will get a token
+// 1. Find the token in the DB and return the corresponding user
+// 2. Return a JWT as a cookie to log the user in
+// 3. Redirect to requested front endpage for password reset
 func (e *Env) passReset(c *gin.Context) {
     //token := c.Query("token")
     //e.db.PasswordReset(token)
+    token := c.Query("token")
+    //e.db.VerfUserEmail(token)
+    fmt.Print("Token: ")
+    fmt.Println(token)
 }
 
 // ONLY FOR TESTING

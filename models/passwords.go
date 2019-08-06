@@ -3,6 +3,7 @@ package models
 import (
     "golang.org/x/crypto/bcrypt"
     errors "github.com/jelgar/login/errors"
+    "fmt"
 )
 
 func HashSaltPwd(pwd []byte) (string, *errors.ApiError) {
@@ -19,7 +20,12 @@ func ComparePassword(hashedPwd string, plainPwd []byte) (bool, *errors.ApiError)
     byteHash := []byte(hashedPwd)
 
     err := bcrypt.CompareHashAndPassword(byteHash, plainPwd)
-    if err != nil {
+    if err == bcrypt.ErrMismatchedHashAndPassword {
+        fmt.Println("Passwords do not match")
+        return false, nil
+    } else if err != nil {
+        fmt.Println(err)
+        panic(err)
         return false, &errors.ApiError{err, "Error Comapring Passwords", 500}
     }
     return true, nil

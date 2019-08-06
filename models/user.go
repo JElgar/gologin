@@ -127,8 +127,9 @@ func (db *DB) Login (u *User) (User, *errors.ApiError) {
                 return dbUser, &errors.ApiError{nil, "Uknown error when trying to check if loging in user exists", 500}
         }
     }
-    isSame, err := ComparePassword(dbUser.Password, []byte(u.Password))
+    isSame, err := ComparePassword(string(dbUser.Password), []byte(u.Password))
     if err != nil {
+        panic(err)
         return dbUser, &errors.ApiError{nil, "Error comparing users", 401}
     }
     if (!isSame) {

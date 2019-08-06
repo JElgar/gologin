@@ -14,13 +14,13 @@ import (
 func (db *DB) SendPassReset(u *User) {
     // TODO change message!! Need to write new email function in email.go
     // TODO TEMPLATE
-    url := config.Domain + "/api/" + "v" + config.Version + "/passwordReset?token=" + u.Token
+    url := config.APIDomain + "/api/" + "v" + config.Version + "/passwordReset?token=" + u.Token
     mail.Send(u.Username, u.Email, url, "email/email.html")
 }
 
 func (db *DB) SendVerfEmail(u *User) {
     // TODO change message!! Need to write new email function in email.go
-    url := config.Domain + "/api/" + "v" + config.Version + "/confirmEmail?token=" + u.Token
+    url := config.APIDomain + "/api/" + "v" + config.Version + "/confirmEmail?token=" + u.Token
     mail.Send(u.Username, u.Email, url, "email/email.html")
 }
 
