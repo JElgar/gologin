@@ -8,32 +8,13 @@ import (
    "github.com/gin-gonic/gin"
    "time"
    "net/http"
+   "github.com/gin-contrib/cors"
 //   "net/url"
 )
 
-// I think this is the middleware i need to make local stuff work :D (lets hope)
-func CORSMiddleware() gin.HandlerFunc {
-     return func(c *gin.Context) {
-         //print("Using middleware")
-         c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-         c.Writer.Header().Set("Access-Control-Max-Age", "86400")
-         c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
-         c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-         c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
-         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-
-         if c.Request.Method == "OPTIONS" {
-             c.AbortWithStatus(201)
-         } else {
-             c.Next()
-         }
-     }
- }
-
 func SetupRouter(env *Env) *gin.Engine {
     r := gin.Default()
-    r.Use(CORSMiddleware())
-    
+    r.Use(cors.Default()) 
     // guessing this is pretty handy for version control :D
     api := r.Group("api/v1")
 
@@ -211,8 +192,9 @@ func (e *Env) login (c *gin.Context) {
     }
    
     // TODO making these both false seemed to fix an issue but i dont want them to both be false im guessing 
+    fmt.Println("Setting cookie")
     c.SetCookie(
-        "token",
+        "TOKEN",
         tokenString,
         3600,
         "/",

@@ -16,6 +16,7 @@ func HashSaltPwd(pwd []byte) (string, *errors.ApiError) {
     return string(hash), nil
 }
 
+// The differences between this fucntion and the internal bcrypt password is dumb
 func ComparePassword(hashedPwd string, plainPwd []byte) (bool, *errors.ApiError) {
     byteHash := []byte(hashedPwd)
 
@@ -29,5 +30,4 @@ func ComparePassword(hashedPwd string, plainPwd []byte) (bool, *errors.ApiError)
         return false, &errors.ApiError{err, "Error Comapring Passwords", 500}
     }
     return true, nil
-
 }
