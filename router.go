@@ -201,6 +201,18 @@ func (e *Env) login (c *gin.Context) {
         "",
         false,
         false)
+   //     fmt.Println(tokenString)
+   //     expiration := time.Now().Add(365 * 24 * time.Hour)
+   //     cookie := http.Cookie{
+   //         Name:    "TOKEN",
+   //         Value:   "test",
+   //         Expires: expiration,
+   //     }
+   //     http.SetCookie(c.Writer, &cookie)
+   // c.JSON(200, gin.H{
+   //     "Message": "Hello, ",
+   //     "Username": claims.Username,
+   // })
 
 }
 
