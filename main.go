@@ -16,7 +16,7 @@ func main() {
 
     config.InitConfig()
 
-    db, err := models.InitDB("postgresql://admin:test123@ec2-35-178-198-24.eu-west-2.compute.amazonaws.com/secta?sslmode=disable")
+    db, err := models.InitDB(config.DbString)
     if err != nil {
         log.Panic(err)
     }

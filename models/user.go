@@ -4,6 +4,7 @@ import(
     "database/sql"
     "fmt"
     errors "github.com/jelgar/login/errors"
+    config "github.com/jelgar/login/config"
 )
 
 type UserStore interface {
@@ -31,7 +32,7 @@ func (db *DB) GetUser(iu *User) (User, *errors.ApiError){
 
     // TODO accept email as ID as well
     var u User
-    sqlStmt := `SELECT username, password, email, token, emailverif FROM users WHERE username = $1;`
+    sqlStmt := `SELECT username, password, email, token, emailverif FROM ` + config.UserTable + ` WHERE username = $1;`
 
     if iu == nil {
         return u, &errors.ApiError{nil, "Cannot get NIL user", 400}

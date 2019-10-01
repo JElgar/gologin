@@ -251,8 +251,9 @@ func (e *Env) passResetRequest(c *gin.Context) {
 // Ok so new plan
 // This endpoint will get a token
 // 1. Find the token in the DB and return the corresponding user
-// 2. Return a JWT as a cookie to log the user in
+// 2. Return a JWT as a cookie to log the user with reduced permissions
 // 3. Redirect to requested front endpage for password reset
+// 4. Delete cookie and allow full login
 func (e *Env) passReset(c *gin.Context) {
     //token := c.Query("token")
     //e.db.PasswordReset(token)
